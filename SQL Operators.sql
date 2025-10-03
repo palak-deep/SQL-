@@ -54,4 +54,29 @@ WHERE score  >= 100 AND  score <= 500;
 
 /*  MEMBERSHIP OPERATORS    */
 
---Task: Retrieve 
+--Task: Retrieve all customers from either germany or USA
+SELECT * FROM customers
+WHERE country IN ('Germany' , 'USA');
+--OR the other way is
+SELECT * FROM  customers
+WHERE country ='Germany' OR  country='USA';
+
+
+/*      SEARCH OPERATOR    */
+
+--TASK:Find all customers whose first name starts with 'M'
+SELECT * FROM  customers 
+WHERE first_name LIKE 'M%';
+
+--Task: Find all customers whose first name ends with 'n'
+SELECT * FROM customers 
+WHERE first_name LIKE '%n';
+
+--TASK: Find all customers whose first name contains 'r'
+SELECT * FROM customers
+WHERE first_name LIKE '%r%';
+
+--TASK: Find all customers whose first name has 'r' in the 3rd position
+SELECT * FROM customers
+WHERE first_name LIKE '__r%';
+
