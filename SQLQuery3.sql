@@ -76,13 +76,12 @@ ORDER BY order_date DESC;
 
 
 
-      --              DML Commands
+                                                   /*  DML Commands     */
 --Insert values into customer table for two rows
 INSERT INTO customers(id,first_name,country,score)
 VALUES
 (6,'Anna' , 'USA' , null),
 (7,'Sam' , NULL , 100);
-
 SELECT * FROM customers
 
 --Insert values to all the columns of table customers
