@@ -207,3 +207,103 @@ CreationTime,
 CAST(CreationTime AS DATE) AS[Datetime to date]
 FROM Sales.Orders;
 
+--TASK:Add 3 months and 2 years to OrderDate using Dateadd function
+SELECT OrderID,OrderDate,
+DATEADD(year,2,OrderDate) AS  TwoYearsLater,
+DATEADD(month,3,OrderDate) AS  ThreeMonthsLater
+FROM Sales.Orders;
+
+--Task:Subtract 10 days from OderDate
+SELECT OrderID,OrderDate,
+DATEADD(day,-10,OrderDate) AS  TenDaysBefore
+FROM Sales.Orders;
+
+--Task:how many yeras have passed between orderdate and shipping date 
+SELECT OrderID, ProductID ,OrderDate,ShipDate,
+DATEDIFF(day,OrderDate,ShipDate) AS DaysTaken
+FROM Sales.Orders;
+
+--TASK:Calculate the age of employees
+SELECT * FROM Sales.Employees;
+
+SELECT EmployeeID,
+BirthDate,DATEDIFF(year,BirthDate , GETDATE()) Age
+FROM Sales.Employees;
+
+--TASK: Find the average shipping duration in days for each month
+ SELECT
+ MONTH(OrderDate)AS OrderDate,
+AVG(DATEDIFF(day,OrderDate,ShipDate))AS AvgShip
+FROM Sales.Orders
+GROUP BY MONTH(OrderDate);
+
+--TIME GAP ANALYSIS
+--TASK:Find the number of days between each order and previous order
+SELECT OrderID,
+OrderDate CurrentOederDate,
+LAG(OrderDate) OVER (ORDER BY OrderDate) PreviousOrder,  --LAG(is a window function)
+DATEDIFF (day,LAG(OrderDate) OVER (ORDER BY OrderDate),OrderDate) NoofDays
+FROM Sales.Orders;
+
+--TASK: Date Validation ISDATE Function
+SELECT
+ISDATE('123') DateCheck1,
+ISDATE('2025-08-20') DateCheck2,
+ISDATE('20-08-2025') DateCheck3, --not a std format
+ISDATE('2025') DateCheck4,
+ISDATE('08') DateCheck5;
+
+
+          /* NULL Function */
+
+
+--TASK:Find the average scores of the customers
+SELECT 
+CustomerID,
+Score,
+AVG(Score) OVER() AvgScores,
+AVG(COALESCE(Score ,0)) OVER()AvgScores2
+FROM Sales.Customers;
+
+--TASK:Display the full name of customers in a single field by merging their first & last names, and add 10 bonus points to each customer's score.
+
+SELECT 
+CustomerID,
+FirstName,
+LastName,
+FirstName+ ' '+ COALESCE(LastName,'' ) AS FullName,
+Score,
+ISNULL(Score ,0)+10 AS ScoreBonus
+FROM Sales.Customers;
+
+--TASK: Sort the customers from lowest to highest scores,with NULLs appearing last.
+SELECT 
+CustomerID,
+Score
+FROM Sales.Customers
+ORDER BY CASE WHEN Score IS NULL THEN 1 ELSE 0 END ,Score
+
+--TASK:find the sales peice for each order b dividing the sales by the quantity
+SELECT OrderID,Sales,Quantity,
+Sales/NULLIF(Quantity ,0) AS Price
+FROM Sales.Orders;
+
+--TASK:Identify  the cutomers who have no scores
+SELECT *
+FROM Sales.Customers
+WHERE Score IS NULL;
+
+--TASK: List all customers who have scores
+SELECT * 
+FROM Sales.Customers
+WHERE Score IS NOT NULL;
+
+--TASK: List all details for customers who have not placed any orders
+SELECT c.*,
+o.OrderID
+FROM Sales.Customers c
+LEFT JOIN Sales.Orders o
+ON c.CustomerID=o.CustomerID
+WHERE o.CustomerID IS NULL;
+
+
