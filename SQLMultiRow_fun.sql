@@ -84,3 +84,134 @@ SELECT
 	RANK() OVER(ORDER BY SUM(Sales) DESC) RankCustomers
 FROM Sales.Orders
 GROUP BY CustomerID;
+
+
+   /*AGGREGATE WINDOW FUNCTION*/
+
+--TASK:Find the total no.of orders with details like orderId,Orderdate
+SELECT
+	OrderID,
+	OrderDate,
+	COUNT (*) OVER()AS TotalOrders
+FROM Sales.Orders;
+
+
+--TASK:Find the total no.of orders for each customer with details like orderId,Orderdate
+SELECT 
+	OrderID,
+	OrderDate,
+	CustomerID,
+	COUNT (*) OVER(PARTITION BY CustomerID) TotalOrdersByCustomers
+FROM Sales.Orders;
+
+--TASK:Find total no.ofcustomers & provide all details
+SELECT *,
+COUNT(*) OVER() TotalCustomers
+FROM Sales.Customers;
+
+--TASK:Find total no.of scores for the customers
+
+SELECT *,
+COUNT(Score) OVER() TotalScore
+FROM Sales.Customers;
+
+--TASK:Check whether the table "Orders" contains any duplicate rows
+SELECT 
+	OrderID,
+	COUNT(*) OVER(PARTITION BY OrderID) CheckPK
+FROM Sales.Orders;
+
+--TASK:Check whether the table "OrdersAechive" contains any duplicate rows
+SELECT 
+	OrderID,
+	COUNT(*) OVER(PARTITION BY OrderID) CheckPK
+FROM Sales.OrdersArchive;
+
+--TASK:find the total sales across all orders & the total sales for each product.
+--Additionally ,provide details such as OrderID & order date.
+SELECT  OrderID,OrderDate,Sales,ProductID,
+SUM(SALES) OVER()TotalSales,
+SUM (Sales) OVER(PARTITION BY ProductId) SalesByProduct
+FROM Sales.Orders; 
+
+--TASK:Find the percentage contribution of each product's sales to total sales
+SELECT 
+OrderID,
+ProductID,
+Sales,
+SUM(Sales) OVER() TotalSales,
+ROUND(CAST(Sales AS FLOAT) /SUM(Sales) OVER ()* 100 ,2) AS Percentageotal
+FROM Sales.Orders;
+
+--Find the average sales across all orders,
+--and the average sales for each product.
+--Additionally ,provide details such as orderID and order date.
+
+SELECT 
+	OrderID, OrderDate, Sales,ProductID,
+AVG(Sales) OVER() AvgSales,
+AVG(Sales) OVER(PARTITION BY ProductID) AvgProuctSales
+FROM Sales.Orders; 
+
+--TASK:Find average scores of customers and provide detilas as CustomerID & LastName
+SELECT CustomerId, LastName,Score,
+AVG(COALESCE(Score,0)) OVER() AvgScore
+FROM Sales.Customers;
+
+--TASK:Find all orders  where sales are higher than the average sales across all ordres
+SELECT *                      --Because SQL syntax does not allow a subquery in the FROM clause without a name.
+FROM (
+	SELECT OrderId,Sales,
+	AVG(Sales) OVER() AvgSales
+	FROM Sales.Orders
+)t WHERE  Sales >  AvgSales       --This is because SQL requires every subquery used in the FROM clause to have a name.
+
+--TASK:Find the highest & lowest sales for all orders
+--Find the highest & lowest sales for each product
+--Additionally provide details such as orderID,orderDate
+
+SELECT OrderId,OrderDate,Sales,ProductID,
+MIN(Sales)  OVER() AS LowestSale,
+MAX(Sales) OVER() AS HighestSale,
+MIN(Sales) OVER(PARTITION BY ProductID) LowestByProduct,
+MAX(Sales) OVER(PARTITION BY ProductID) HighestByProduct
+FROM Sales.Orders;
+
+--TASK:Show the employees with the highest salaries
+SELECT *
+FROM(
+	SELECT *,
+	MAX(Salary) OVER() HighSalary
+	FROM Sales.Employees
+)t WHERE Salary=HighSalary
+
+--TASK:Calculate  the deviation of each sale from both the minimum & maximum sales amount
+--USE CASE: Help to evaluate how well a value is performing relative to the extremes
+SELECT OrderId,OrderDate,Sales,ProductID,
+	MIN(Sales)  OVER() AS LowestSale,
+	MAX(Sales) OVER() AS HighestSale,
+	Sales -MIN(Sales) OVER() DeviationFromMin, --The lower the deviatiion,thecloser the data points is to extreme
+	MAX(Sales) OVER() -Sales DeviationFromMax
+FROM Sales.Orders;
+
+--TASK:Calculate moving average of sales for each product over time
+SELECT
+OrderID,
+ProductID,
+OrderDate,
+Sales,
+AVG(Sales) OVER(PARTITION BY ProductID) AvgByProduct,
+AVG(Sales) OVER(PARTITION BY ProductID ORDER BY OrderDate) MovAvgByProduct
+FROM Sales.Orders;
+
+
+--TASK:Calculate moving average of sales for each product over time including only the next order
+SELECT
+OrderID,
+ProductID,
+OrderDate,
+Sales,
+AVG(Sales) OVER(PARTITION BY ProductID) AvgByProduct,
+AVG(Sales) OVER(PARTITION BY ProductID ORDER BY OrderDate) MovAvgByProduct,
+AVG(Sales) OVER(PARTITION BY ProductID ORDER BY OrderDate ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING) RollingAvg
+FROM Sales.Orders;
