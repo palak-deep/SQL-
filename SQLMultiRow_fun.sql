@@ -215,3 +215,109 @@ AVG(Sales) OVER(PARTITION BY ProductID) AvgByProduct,
 AVG(Sales) OVER(PARTITION BY ProductID ORDER BY OrderDate) MovAvgByProduct,
 AVG(Sales) OVER(PARTITION BY ProductID ORDER BY OrderDate ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING) RollingAvg
 FROM Sales.Orders;
+
+/*  RANKING WINDOW FUNCTION*/
+--TASK:Rank the orders based on their sales from highest to lowest
+SELECT 
+	OrderID,
+	ProductID,
+	Sales,
+	ROW_NUMBER() OVER(ORDER BY Sales DESC) SalesRank_Row,
+	RANK() OVER(ORDER BY Sales DESC)SalesRank_Rank,
+	DENSE_RANK() OVER(ORDER BY Sales DESC) SalesRank_Dense
+FROM Sales.Orders;
+ 
+--USE CASE: TOP -N Analysis
+--TASK: Find the top highest sales for each product
+
+SELECT *
+FROM(
+SELECT
+	OrderID,
+	ProductId,
+	Sales,
+	ROW_NUMBER() OVER(PARTITION BY ProductID ORDER BY Sales DESC) RankByproduct
+FROM Sales.Orders)t
+WHERE RankByproduct=1;
+
+--USE CASE: Bottom N Analysis
+--TASK:Find the lowest two customers based on their total sales
+
+SELECT * FROM(
+SELECT 
+CustomerID,
+SUM(Sales) AS Total_Sale,
+ROW_NUMBER() OVER(ORDER BY SUM(Sales) ) AS RankingRow
+FROM Sales.Orders
+GROUP BY CustomerID)t
+WHERE RankingRow <=2;
+
+--TASK:Assign unique IDs to the rows of the 'OrderArchive' Table
+SELECT 
+ROW_NUMBER() OVER(ORDER BY OrderID,OrderDate) UniqueID,
+*
+FROM Sales.OrdersArchive;
+
+--TASK:Divide the rows into equal buckets
+SELECT 
+OrderId,
+Sales,
+NTILE(1) OVER(ORDER BY Sales DESC)OneBucket,
+NTILE(2) OVER(ORDER BY Sales DESC)TwoBucket,
+NTILE(3) OVER(ORDER BY Sales DESC)ThreeBucket,
+NTILE(4) OVER(ORDER BY Sales DESC)FourBucket
+FROM Sales.Orders;
+
+--TASK:Segment all orders into 3 categories
+--USE CASE:Segmentation
+SELECT
+*,
+CASE WHEN Buckets=1 THEN 'High'
+	 WHEN Buckets=2 THEN 'Medium'
+	 WHEN Buckets=3 THEN 'Low'
+END SalesSegmentations
+FROM(
+	SELECT 
+	OrderId,
+	Sales,
+	NTILE(3) OVER(ORDER BY Sales DESC)Buckets
+FROM Sales.Orders)t;
+
+--TASK:Find the products that fall within the highest 40% of prices
+SELECT*,
+CONCAT(DisRank *100,'%') DistRankPerc
+FROM(
+	SELECT
+	Product,
+	Price,
+	CUME_DIST() OVER (ORDER BY Price DESC) DisRank
+FROM Sales.Products)t
+WHERE DisRank<=0.4
+
+--TASK:Analyze the month -over-month performance by finding the percentage change
+--in sales between the current & previous months
+SELECT *,
+CurrentMonthSales-PreviousMonthSales AS MoM_change,
+ROUND(CAST((CurrentMonthSales-PreviousMonthSales)AS FLOAT)/PreviousMonthSales*100,1) AS MoM_Prec
+FROM (
+SELECT	
+	MONTH(OrderDate) OrderMonth,
+	SUM(Sales) CurrentMonthSales,
+	LAG(SUM(Sales)) OVER(ORDER BY MONTH(OrderDate)) PreviousMonthSales
+FROM Sales.Orders
+GROUP BY
+	MONTH (OrderDate)
+)t;
+
+
+--TASK:Find the lowest and highest sales for each product
+SELECT
+	OrderID,
+	ProductID,
+	Sales,
+	FIRST_VALUE(Sales) OVER (PARTITION BY ProductID ORDER BY Sales) LowestSales,
+	LAST_VALUE(Sales) OVER (PARTITION BY ProductID ORDER BY Sales
+	ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING )HighestSales
+FROM Sales.Orders;
+
+
